@@ -66,7 +66,7 @@ void simularModeloDispersao(float massa_nano, EnsaioDispersao &dados) {
 
     dados.massa_nanomaterial_mg = massa_nano;
 
-    dados.area_dispersao_cm2 = (log(massa_nano) * 150.0) + random(-10, 10);
+    dados.area_dispersao_cm2 = (log10(massa_nano) * 150.0) + random(-10, 10);
 
    
 
@@ -80,4 +80,25 @@ void simularModeloDispersao(float massa_nano, EnsaioDispersao &dados) {
 
     Serial.println(" cm2");
 
+}
+
+EnsaioDispersao ensaioAtual;
+
+void setup() {
+    Serial.begin(115200); // Inicializa comunicação serial
+    while(!Serial) { delay(10); } // Aguarda conexão
+    
+    Serial.println("--- INICIANDO PROJETO ATENA ---");
+    Serial.println("Simulação de Dispersão (Modelo Logarítmico)");
+    randomSeed(analogRead(0)); // Semente para números aleatórios
+}
+
+void loop() {
+    // Simula um ensaio a cada 2 segundos com massa variável
+    // Gera uma massa aleatória entre 300 e 1000 mg (como no seu Python)
+    float massa_teste = random(300, 1001);
+    
+    simularModeloDispersao(massa_teste, ensaioAtual);
+    
+    delay(2000); 
 }
