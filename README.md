@@ -1,1 +1,0 @@
-# ICT_Catalisa_Modelo_Tecnico
