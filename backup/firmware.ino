@@ -21,10 +21,10 @@
  */
 
 
-#include <Arduino.h>  // Define os tipos básicos (uint32_t), Serial, e a função random()
-#include <math.h>     // Necessário para a função log() - Logaritmo Natural
+//#include <Arduino.h>  // Define os tipos básicos (uint32_t), Serial, e a função random()
+//#include <math.h>     // Necessário para a função log() - Logaritmo Natural
 
-struct EnsaioDispersao {
+/* struct EnsaioDispersao {
 
     uint32_t timestamp;
 
@@ -50,11 +50,9 @@ struct EnsaioDispersao {
 
     /*Flag de validação de sucesso*/
 
-    bool eficiencia_atingida;
+   /* bool eficiencia_atingida;
 
 };
-
-
 
 // Função de Simulação do Modelo Teórico (Para validação do protocolo MQTT)
 
@@ -101,4 +99,5 @@ void loop() {
     simularModeloDispersao(massa_teste, ensaioAtual);
     
     delay(2000); 
-}
+
+*/
