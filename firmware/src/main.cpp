@@ -1,26 +1,32 @@
 /**
- * PROJETO ATENA - FIRMWARE DE MONITORAMENTO IOT
- * Simulação para Validação de Relatório Técnico
- * * Autor: Luan Cavalcante
- * Plataforma: ESP32 (PlatformIO)
+ * PROJETO ATENA - SIMULAÇÃO PC (Sem ESP32)
+ * Autor: Luan Cavalcante
+ * Adaptação para rodar em C++ Padrão (Windows/Linux)
  */
 
-#include <Arduino.h>
-#include <math.h> 
+/* #include <iostream>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <iomanip>
+#include <thread> // Para o delay
+#include <chrono> // Para o delay
 
-// --- CONFIGURAÇÕES DA SIMULAÇÃO ---
-// Se true, imprime apenas números separados por vírgula (fácil de jogar no Excel)
-// Se false, imprime texto bonito para leitura humana
+// --- CONFIGURAÇÕES ---
+// true = Saída CSV (Excel)
+// false = Saída Bonita (Terminal)
 #define MODO_RELATORIO_CSV  false 
 
+using namespace std;
+
 struct EnsaioDispersao {
-    uint32_t timestamp;
-    float pressao_pico_bar;    // Simulação do sensor piezoresistivo
-    float temp_max_c;          // Simulação do termopar
+    long timestamp;
+    float pressao_pico_bar;
+    float temp_max_c;
     
     // VARIÁVEIS DE CONTROLE
-    float massa_nanomaterial_mg;
-    float massa_agua_seca_mg; 
+    float massa_nanomaterial_mg; 
+    float massa_agua_seca_mg;
     
     // KPI CALCULADO
     float area_dispersao_cm2;    
@@ -29,81 +35,78 @@ struct EnsaioDispersao {
 
 EnsaioDispersao ensaioAtual;
 
-// Função Auxiliar para gerar float aleatório em um intervalo
+// Função Auxiliar para gerar float aleatório
 float randomFloat(float min, float max) {
-    return min + (float)random((max - min) * 100) / 100.0;
+    return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
+}
+
+// Simula o tempo do Arduino (millis)
+long getSimulatedMillis() {
+    static auto start = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
 }
 
 void simularSensores(float massa_nano, EnsaioDispersao &dados) {
-    // 1. INPUT: Massa (Eixo X)
+    dados.timestamp = getSimulatedMillis();
     dados.massa_nanomaterial_mg = massa_nano;
-    dados.massa_agua_seca_mg = 500.0;
-    dados.timestamp = millis();
+    dados.massa_agua_seca_mg = 500.0; // Controle fixo
 
-    // 2. SIMULAÇÃO: Pressão (Bar)
-    // Vamos supor que mais massa gera ligeiramente mais pressão, com ruído
-    // Base: 10 bar + um pouquinho proporcional à massa + ruído
+    // Simulação Pressão
     dados.pressao_pico_bar = 10.0 + (massa_nano / 1000.0) + randomFloat(-0.5, 0.5);
 
-    // 3. SIMULAÇÃO: Temperatura (°C)
-    // Temperatura ambiente variando levemente (ex: processo gera pouco calor)
+    // Simulação Temperatura
     dados.temp_max_c = randomFloat(28.0, 32.5);
 
-    // 4. MODELO MATEMÁTICO (O mesmo do Python)
-    // Fórmula: Area = 250 * log10(massa) - 300
-    // Adicionamos um "+ random" para simular imperfeições do mundo real
+    // MODELO MATEMÁTICO (Mesma lógica do Firmware)
+    // Area = 250 * log10(massa) - 300
     float area_teorica = (250.0 * log10(massa_nano)) - 300.0;
-    dados.area_dispersao_cm2 = area_teorica + randomFloat(-15.0, 15.0); // +/- 15cm² de erro
+    dados.area_dispersao_cm2 = area_teorica + randomFloat(-15.0, 15.0);
 
-    // 5. VALIDAÇÃO DE META
-    // Se a área for maior que 200cm², o teste passou
     dados.eficiencia_atingida = (dados.area_dispersao_cm2 > 200.0);
 }
 
-void setup() {
-    Serial.begin(115200);
-    while(!Serial) { delay(10); }
-
-    // Semente aleatória para garantir dados diferentes a cada reinício
-    // Se o pino 34 estiver flutuando (sem nada), gera ruído bom
-    randomSeed(analogRead(34)); 
+int main() {
+    // Inicializa a semente aleatória
+    srand(static_cast <unsigned> (time(0)));
 
     if (!MODO_RELATORIO_CSV) {
-        Serial.println("--- INICIANDO SIMULAÇÃO PROJETO ATENA ---");
-        Serial.println("Formula: 250 * log10(massa) - 300");
+        cout << "--- INICIANDO SIMULACAO (VERSAO PC) ---" << endl;
+        cout << "Formula: 250 * log10(massa) - 300" << endl;
     } else {
-        // Cabeçalho do CSV para o Excel
-        Serial.println("Timestamp_ms,Massa_mg,Pressao_bar,Temp_C,Area_cm2,Meta_Atingida");
-    }
-}
-
-void loop() {
-    // Gera uma massa aleatória para o teste (entre 300mg e 1000mg)
-    float massa_teste = random(300, 1001);
-
-    // Roda a simulação
-    simularSensores(massa_teste, ensaioAtual);
-
-    // Saída de Dados
-    if (MODO_RELATORIO_CSV) {
-        Serial.print(ensaioAtual.timestamp); Serial.print(",");
-        Serial.print(ensaioAtual.massa_nanomaterial_mg); Serial.print(",");
-        Serial.print(ensaioAtual.massa_agua_seca_mg); Serial.print(",");
-        Serial.print(ensaioAtual.pressao_pico_bar); Serial.print(",");
-        Serial.print(ensaioAtual.temp_max_c); Serial.print(",");
-        Serial.print(ensaioAtual.area_dispersao_cm2); Serial.print(",");
-        Serial.println(ensaioAtual.eficiencia_atingida ? "1" : "0");
-    } else {
-        Serial.println("----------------------------------------");
-        Serial.print("Massa Energetico: "); Serial.print(ensaioAtual.massa_nanomaterial_mg); Serial.println(" mg");
-        Serial.print("Pressao Pico:     "); Serial.print(ensaioAtual.pressao_pico_bar); Serial.println(" bar");
-        Serial.print("Temp Maxima:      "); Serial.print(ensaioAtual.temp_max_c); Serial.println(" C");
-        Serial.print("AREA DISPERSAO:   "); Serial.print(ensaioAtual.area_dispersao_cm2); Serial.println(" cm2");
-        Serial.print("STATUS META:      "); 
-        if(ensaioAtual.eficiencia_atingida) Serial.println("[ APROVADO ]"); 
-        else Serial.println("[ REPROVADO ]");
+        cout << "Timestamp,Massa_Nano_mg,Massa_Agua_mg,Pressao_bar,Temp_C,Area_cm2,Meta_OK" << endl;
     }
 
-    // Aguarda 2 segundos para o próximo "ensaio"
-    delay(2000);
+    // Loop Infinito (simulando o loop do Arduino)
+    // Para parar, pressione Ctrl+C no terminal
+    while (true) {
+        float massa_teste = 300 + (rand() % 701); // Random entre 300 e 1000
+
+        simularSensores(massa_teste, ensaioAtual);
+
+        if (MODO_RELATORIO_CSV) {
+            cout << ensaioAtual.timestamp << ","
+                 << ensaioAtual.massa_nanomaterial_mg << ","
+                 << ensaioAtual.massa_agua_seca_mg << ","
+                 << ensaioAtual.pressao_pico_bar << ","
+                 << ensaioAtual.temp_max_c << ","
+                 << ensaioAtual.area_dispersao_cm2 << ","
+                 << (ensaioAtual.eficiencia_atingida ? "1" : "0") << endl;
+        } else {
+            cout << fixed << setprecision(2);
+            cout << "----------------------------------------" << endl;
+            cout << "Massa Energetico: " << ensaioAtual.massa_nanomaterial_mg << " mg" << endl;
+            cout << "Massa Agua Seca:  " << ensaioAtual.massa_agua_seca_mg << " mg (Ctrl)" << endl;
+            cout << "Pressao Pico:     " << ensaioAtual.pressao_pico_bar << " bar" << endl;
+            cout << "Temp Maxima:      " << ensaioAtual.temp_max_c << " C" << endl;
+            cout << "AREA DISPERSAO:   " << ensaioAtual.area_dispersao_cm2 << " cm2" << endl;
+            cout << "RESULTADO:        " << (ensaioAtual.eficiencia_atingida ? "[ APROVADO ]" : "[ REPROVADO ]") << endl;
+        }
+
+        // Delay de 2 segundos
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    }
+
+    return 0;
 }
+*/
