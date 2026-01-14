@@ -1,1 +1,1 @@
-# ICT_Catalisa_Modelo_Tecnico
+O teste está no teórico está na pasta analysis no arquivo modelo_teorico_para_testes.py
